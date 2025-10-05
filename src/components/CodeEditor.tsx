@@ -490,7 +490,7 @@ function CodeEditor({ sessionId, userId }: CodeEditorProps) {
               lineNumbers: "on",
               scrollBeyondLastLine: false,
               automaticLayout: true,
-              padding: { top: 16, bottom: 16, right: 120 },
+              padding: { top: 16, bottom: 16 },
               wordWrap: "on",
               wrappingIndent: "indent",
             }}
