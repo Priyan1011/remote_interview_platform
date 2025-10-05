@@ -20,13 +20,23 @@ type Interview = Doc<"interviews">;
 
 function DashboardPage() {
   const users = useQuery(api.users.getUsers);
-  const interviews = useQuery(api.interviews.getAllInterviews);
-  const updateStatus = useMutation(api.interviews.updateInterviewStatus);
+  const interviews = useQuery(api.interviews.getAllInterviews); // This should work now
+  const updateStatus = useMutation(api.interviews.updateInterviewStatusWithResult); // CHANGED: Use the new mutation
 
-  const handleStatusUpdate = async (interviewId: Id<"interviews">, status: string) => {
+  // UPDATED: This function now handles both status and result updates
+  const handleStatusUpdate = async (
+    interviewId: Id<"interviews">, 
+    status: string, 
+    result?: "passed" | "failed"
+  ) => {
     try {
-      await updateStatus({ id: interviewId, status });
-      toast.success(`Interview marked as ${status}`);
+      await updateStatus({ 
+        id: interviewId, 
+        status,
+        result,
+        overallRating: result === "passed" ? 4 : 2,
+      });
+      toast.success(`Interview marked as ${result || status}`);
     } catch (error) {
       toast.error("Failed to update status");
     }
@@ -61,7 +71,7 @@ function DashboardPage() {
                     const startTime = new Date(interview.startTime);
 
                     return (
-                      <Card className="hover:shadow-md transition-all">
+                      <Card key={interview._id} className="hover:shadow-md transition-all">
                         {/* CANDIDATE INFO */}
                         <CardHeader className="p-4">
                           <div className="flex items-center gap-3">
@@ -72,11 +82,21 @@ function DashboardPage() {
                             <div>
                               <CardTitle className="text-base">{candidateInfo.name}</CardTitle>
                               <p className="text-sm text-muted-foreground">{interview.title}</p>
+                              
+                              {/* NEW: Display result if available */}
+                              {interview.result && (
+                                <Badge 
+                                  variant={interview.result === "passed" ? "default" : "destructive"}
+                                  className="mt-1"
+                                >
+                                  {interview.result === "passed" ? "✅ Passed" : "❌ Failed"}
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </CardHeader>
 
-                        {/* DATE &  TIME */}
+                        {/* DATE & TIME */}
                         <CardContent className="p-4">
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
@@ -88,15 +108,40 @@ function DashboardPage() {
                               {format(startTime, "hh:mm a")}
                             </div>
                           </div>
+
+                          {/* NEW: Display overall rating if available */}
+                          {interview.overallRating && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-sm text-muted-foreground">Rating:</span>
+                              <div className="flex">
+                                {[...Array(5)].map((_, i) => (
+                                  <span
+                                    key={i}
+                                    className={`text-sm ${
+                                      i < interview.overallRating!
+                                        ? "text-yellow-400"
+                                        : "text-gray-300"
+                                    }`}
+                                  >
+                                    ★
+                                  </span>
+                                ))}
+                              </div>
+                              <span className="text-sm text-muted-foreground">
+                                ({interview.overallRating}/5)
+                              </span>
+                            </div>
+                          )}
                         </CardContent>
 
                         {/* PASS & FAIL BUTTONS */}
                         <CardFooter className="p-4 pt-0 flex flex-col gap-3">
-                          {interview.status === "completed" && (
+                          {/* UPDATED: Only show Pass/Fail buttons for completed interviews without result */}
+                          {interview.status === "completed" && !interview.result && (
                             <div className="flex gap-2 w-full">
                               <Button
                                 className="flex-1"
-                                onClick={() => handleStatusUpdate(interview._id, "succeeded")}
+                                onClick={() => handleStatusUpdate(interview._id, "completed", "passed")}
                               >
                                 <CheckCircle2Icon className="h-4 w-4 mr-2" />
                                 Pass
@@ -104,13 +149,24 @@ function DashboardPage() {
                               <Button
                                 variant="destructive"
                                 className="flex-1"
-                                onClick={() => handleStatusUpdate(interview._id, "failed")}
+                                onClick={() => handleStatusUpdate(interview._id, "completed", "failed")}
                               >
                                 <XCircleIcon className="h-4 w-4 mr-2" />
                                 Fail
                               </Button>
                             </div>
                           )}
+
+                          {/* UPDATED: Show different message if result is already set */}
+                          {interview.result && (
+                            <div className="text-center w-full">
+                              <p className="text-sm text-muted-foreground">
+                                Result: <strong className="capitalize">{interview.result}</strong>
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Comment Dialog - Always show for feedback */}
                           <CommentDialog interviewId={interview._id} />
                         </CardFooter>
                       </Card>
@@ -124,4 +180,5 @@ function DashboardPage() {
     </div>
   );
 }
+
 export default DashboardPage;

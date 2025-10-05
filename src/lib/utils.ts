@@ -35,6 +35,7 @@ export const getCandidateInfo = (users: User[], candidateId: string) => {
   const candidate = users?.find((user) => user.clerkId === candidateId);
   return {
     name: candidate?.name || "Unknown Candidate",
+    email: candidate?.email || "candidate@example.com", // ADD THIS LINE
     image: candidate?.image || "",
     initials:
       candidate?.name
@@ -48,6 +49,7 @@ export const getInterviewerInfo = (users: User[], interviewerId: string) => {
   const interviewer = users?.find((user) => user.clerkId === interviewerId);
   return {
     name: interviewer?.name || "Unknown Interviewer",
+    email: interviewer?.email || "interviewer@example.com", // ADD THIS LINE
     image: interviewer?.image,
     initials:
       interviewer?.name

@@ -1,6 +1,6 @@
 import { useUser } from "@clerk/nextjs";
 import { useStreamVideoClient } from "@stream-io/video-react-sdk";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import toast from "react-hot-toast";
@@ -26,6 +26,7 @@ import { Loader2Icon, XIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { TIME_SLOTS } from "@/constants";
 import MeetingCard from "@/components/MeetingCard";
+import { format } from "date-fns";
 
 function InterviewScheduleUI() {
   const client = useStreamVideoClient();
@@ -36,6 +37,9 @@ function InterviewScheduleUI() {
   const interviews = useQuery(api.interviews.getAllInterviews) ?? [];
   const users = useQuery(api.users.getUsers) ?? [];
   const createInterview = useMutation(api.interviews.createInterview);
+  
+  // Add email functionality
+  const sendScheduleEmail = useAction(api.emails.sendInterviewScheduled);
 
   const candidates = users?.filter((u) => u.role === "candidate");
   const interviewers = users?.filter((u) => u.role === "interviewer");
@@ -77,6 +81,7 @@ function InterviewScheduleUI() {
         },
       });
 
+      // Create interview in database
       await createInterview({
         title,
         description,
@@ -87,9 +92,29 @@ function InterviewScheduleUI() {
         interviewerIds,
       });
 
-      setOpen(false);
-      toast.success("Meeting scheduled successfully!");
+      // Send email notification
+      const selectedCandidate = candidates?.find(c => c.clerkId === candidateId);
+      if (selectedCandidate && sendScheduleEmail) {
+        try {
+          await sendScheduleEmail({
+            candidateEmail: selectedCandidate.email,
+            candidateName: selectedCandidate.name,
+            interviewTitle: title,
+            interviewDate: format(meetingDate, "MMMM dd, yyyy"),
+            interviewTime: format(meetingDate, "hh:mm a"),
+            interviewerName: user?.firstName || "Interview Panel",
+            meetingLink: `${process.env.NEXT_PUBLIC_BASE_URL}/meeting/${id}?personal=true`,
+          });
+          toast.success("Meeting scheduled and confirmation email sent!");
+        } catch (emailError) {
+          console.error("Email sending failed:", emailError);
+          toast.success("Meeting scheduled! (Email notification failed)");
+        }
+      } else {
+        toast.success("Meeting scheduled successfully!");
+      }
 
+      setOpen(false);
       setFormData({
         title: "",
         description: "",
@@ -141,10 +166,9 @@ function InterviewScheduleUI() {
         </div>
 
         {/* DIALOG */}
-
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="lg">Schedule Interview</Button>
+            <Button size="lg" className="bg-green-500 hover:bg-green-600">Schedule Interview</Button>
           </DialogTrigger>
 
           <DialogContent className="sm:max-w-[500px] h-[calc(100vh-200px)] overflow-auto">
@@ -245,7 +269,6 @@ function InterviewScheduleUI() {
                 </div>
 
                 {/* TIME */}
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Time</label>
                   <Select
@@ -271,7 +294,7 @@ function InterviewScheduleUI() {
                 <Button variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={scheduleMeeting} disabled={isCreating}>
+                <Button onClick={scheduleMeeting} disabled={isCreating} className="bg-green-500 hover:bg-green-600">
                   {isCreating ? (
                     <>
                       <Loader2Icon className="mr-2 size-4 animate-spin" />

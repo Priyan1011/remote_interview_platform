@@ -1,5 +1,16 @@
+// convex/codeEditor.ts
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+
+export const getCodeSession = query({
+  args: { sessionId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("codeEditorSessions")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .first();
+  },
+});
 
 export const updateCode = mutation({
   args: {
@@ -9,40 +20,30 @@ export const updateCode = mutation({
     questionId: v.string(),
     userId: v.string(),
   },
-  handler: async (ctx, { sessionId, code, language, questionId, userId }) => {
+  handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("codeEditorSessions")
-      .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
       .first();
 
     if (existing) {
       await ctx.db.patch(existing._id, {
-        code,
-        language,
-        questionId,
+        code: args.code,
+        language: args.language,
+        questionId: args.questionId,
         lastUpdated: Date.now(),
-        userId,
+        userId: args.userId,
       });
     } else {
       await ctx.db.insert("codeEditorSessions", {
-        sessionId,
-        code,
-        language,
-        questionId,
+        sessionId: args.sessionId,
+        code: args.code,
+        language: args.language,
+        questionId: args.questionId,
         lastUpdated: Date.now(),
-        userId,
+        userId: args.userId,
       });
     }
-  },
-});
-
-export const getCodeSession = query({
-  args: { sessionId: v.string() },
-  handler: async (ctx, { sessionId }) => {
-    return await ctx.db
-      .query("codeEditorSessions")
-      .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
-      .first();
   },
 });
 
@@ -52,17 +53,17 @@ export const updateLanguage = mutation({
     language: v.string(),
     userId: v.string(),
   },
-  handler: async (ctx, { sessionId, language, userId }) => {
+  handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("codeEditorSessions")
-      .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
       .first();
 
     if (existing) {
       await ctx.db.patch(existing._id, {
-        language,
+        language: args.language,
         lastUpdated: Date.now(),
-        userId,
+        userId: args.userId,
       });
     }
   },
@@ -75,27 +76,18 @@ export const updateQuestion = mutation({
     code: v.string(),
     userId: v.string(),
   },
-  handler: async (ctx, { sessionId, questionId, code, userId }) => {
+  handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("codeEditorSessions")
-      .withIndex("by_session", (q) => q.eq("sessionId", sessionId))
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
       .first();
 
     if (existing) {
       await ctx.db.patch(existing._id, {
-        questionId,
-        code,
+        questionId: args.questionId,
+        code: args.code,
         lastUpdated: Date.now(),
-        userId,
-      });
-    } else {
-      await ctx.db.insert("codeEditorSessions", {
-        sessionId,
-        questionId,
-        code,
-        language: "javascript", // default
-        lastUpdated: Date.now(),
-        userId,
+        userId: args.userId,
       });
     }
   },

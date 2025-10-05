@@ -7,7 +7,6 @@ import InterviewScheduleUI from "./InterviewScheduleUI";
 
 function SchedulePage() {
   const router = useRouter();
-
   const { isInterviewer, isLoading } = useUserRole();
 
   if (isLoading) return <LoaderUI />;
@@ -15,4 +14,5 @@ function SchedulePage() {
 
   return <InterviewScheduleUI />;
 }
+
 export default SchedulePage;
