@@ -6,11 +6,11 @@ import { Resend } from 'resend';
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-// For testing - always send to your email
-const TEST_MODE = true;
+// For testing - set to false for production
+const TEST_MODE = false;
 const TEST_EMAIL = "priyanmessi007@gmail.com";
 
-// Feedback email action
+// Feedback email action with Pass/Fail result
 export const sendFeedbackAdded = action({
   args: {
     candidateEmail: v.string(),
@@ -18,11 +18,13 @@ export const sendFeedbackAdded = action({
     interviewTitle: v.string(),
     interviewerName: v.string(),
     feedback: v.string(),
+    result: v.union(v.literal("passed"), v.literal("failed")), // ADD RESULT HERE
   },
   handler: async (ctx, args) => {
-    // Use test email in development
+    // Use actual candidate info in production, test email in development
     const targetEmail = TEST_MODE ? TEST_EMAIL : args.candidateEmail;
-    const targetName = TEST_MODE ? "Priyan" : args.candidateName;
+    const targetName = TEST_MODE ? "Alice" : args.candidateName; // CHANGED FROM "Test Candidate"
+    const resultColor = args.result === 'passed' ? '#10B981' : '#EF4444';
     
     // Check if Resend is configured
     if (!resend) {
@@ -34,7 +36,7 @@ export const sendFeedbackAdded = action({
       const { data, error } = await resend.emails.send({
         from: 'InterLink Interviews <onboarding@resend.dev>',
         to: [targetEmail],
-        subject: `💬 New Feedback: ${args.interviewTitle}`,
+        subject: `💬 Interview Feedback: ${args.interviewTitle}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -45,23 +47,39 @@ export const sendFeedbackAdded = action({
               .header { background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
               .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
               .feedback-box { background: white; padding: 25px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #8B5CF6; font-style: italic; }
+              .result-box { background: white; padding: 20px; margin: 15px 0; border-radius: 8px; text-align: center; border: 2px solid ${resultColor}; }
               .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
             </style>
           </head>
           <body>
             <div class="container">
               <div class="header">
-                <h1>💬 New Feedback Received</h1>
-                <p>Your interviewer has added feedback</p>
+                <h1>💬 Interview Feedback & Result</h1>
+                <p>Your interviewer has shared feedback and results</p>
               </div>
               <div class="content">
                 <p>Hi <strong>${targetName}</strong>,</p>
-                <p><strong>${args.interviewerName}</strong> has added feedback for your interview: <strong>${args.interviewTitle}</strong></p>
+                <p><strong>${args.interviewerName}</strong> has completed the evaluation for your interview: <strong>${args.interviewTitle}</strong></p>
                 
+                <!-- RESULT SECTION -->
+                <div class="result-box">
+                  <h2 style="color: ${resultColor}; margin: 0 0 10px 0;">
+                    ${args.result === 'passed' ? '🎉 PASSED' : '❌ NOT PASSED'}
+                  </h2>
+                  <p><strong>Reviewed by:</strong> ${args.interviewerName}</p>
+                </div>
+
+                <!-- FEEDBACK SECTION -->
                 <div class="feedback-box">
+                  <h3>💬 Feedback from Interviewer</h3>
                   <p>"${args.feedback}"</p>
                 </div>
 
+                ${args.result === 'passed' ? `
+                <p>🎉 <strong>Congratulations!</strong> Our team will contact you shortly regarding the next steps in the process.</p>
+                ` : `
+                <p>Thank you for your time and effort. We encourage you to continue developing your skills and apply for future opportunities that match your experience.</p>
+                `}
 
                 <p>This feedback is meant to help you improve and grow in your career journey.</p>
                 
@@ -90,7 +108,7 @@ export const sendFeedbackAdded = action({
   },
 });
 
-// Interview result email action
+// Interview result email action (keep as is)
 export const sendInterviewResult = action({
   args: {
     candidateEmail: v.string(),
@@ -104,7 +122,7 @@ export const sendInterviewResult = action({
   handler: async (ctx, args) => {
     // Use test email in development
     const targetEmail = TEST_MODE ? TEST_EMAIL : args.candidateEmail;
-    const targetName = TEST_MODE ? "Test Candidate" : args.candidateName;
+    const targetName = TEST_MODE ? "Alice" : args.candidateName;
     const resultColor = args.result === 'passed' ? '#10B981' : '#EF4444';
     
     // Check if Resend is configured
@@ -160,10 +178,6 @@ export const sendInterviewResult = action({
                 </div>
                 ` : ''}
 
-                ${TEST_MODE ? `<p style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeaa7;">
-                  <strong>TEST MODE:</strong> This email would normally be sent to ${args.candidateEmail}
-                </p>` : ''}
-
                 ${args.result === 'passed' ? `
                 <p>Congratulations on your achievement! Our team will contact you shortly regarding the next steps.</p>
                 ` : `
@@ -209,7 +223,7 @@ export const sendInterviewScheduled = action({
   handler: async (ctx, args) => {
     // Use test email in development
     const targetEmail = TEST_MODE ? TEST_EMAIL : args.candidateEmail;
-    const targetName = TEST_MODE ? "Test Candidate" : args.candidateName;
+    const targetName = TEST_MODE ? "Alice" : args.candidateName;
     
     // Check if Resend is configured
     if (!resend) {
@@ -261,10 +275,6 @@ export const sendInterviewScheduled = action({
                   <li>Keep your resume handy</li>
                   <li>Prepare any required documents</li>
                 </ul>
-
-                ${TEST_MODE ? `<p style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeaa7;">
-                  <strong>TEST MODE:</strong> This email would normally be sent to ${args.candidateEmail}
-                </p>` : ''}
 
                 <p>Best of luck! 🚀</p>
                 <p><strong>The InterLink Team</strong></p>
