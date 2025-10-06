@@ -22,7 +22,7 @@ export const sendFeedbackAdded = action({
   handler: async (ctx, args) => {
     // Use test email in development
     const targetEmail = TEST_MODE ? TEST_EMAIL : args.candidateEmail;
-    const targetName = TEST_MODE ? "Test Candidate" : args.candidateName;
+    const targetName = TEST_MODE ? "Priyan" : args.candidateName;
     
     // Check if Resend is configured
     if (!resend) {
@@ -62,9 +62,6 @@ export const sendFeedbackAdded = action({
                   <p>"${args.feedback}"</p>
                 </div>
 
-                ${TEST_MODE ? `<p style="background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeaa7;">
-                  <strong>TEST MODE:</strong> This email would normally be sent to ${args.candidateEmail}
-                </p>` : ''}
 
                 <p>This feedback is meant to help you improve and grow in your career journey.</p>
                 
