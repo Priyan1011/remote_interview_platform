@@ -36,7 +36,7 @@ export const getCandidateDashboardData = query({
     // Get comments for these interviews
     const interviewIds = interviews.map(i => i._id);
     let comments: any[] = [];
-    
+
     if (interviewIds.length > 0) {
       comments = await ctx.db
         .query("comments")
@@ -67,7 +67,37 @@ export const getCandidateDashboardData = query({
   },
 });
 
-// Keep all your other mutations...
+// MISSING FUNCTIONS - ADD THESE BACK:
+export const createInterview = mutation({
+  args: {
+    title: v.string(),
+    description: v.optional(v.string()),
+    startTime: v.number(),
+    status: v.string(),
+    streamCallId: v.string(),
+    candidateId: v.string(),
+    interviewerIds: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    return await ctx.db.insert("interviews", {
+      ...args,
+    });
+  },
+});
+
+export const getInterviewByStreamCallId = query({
+  args: { streamCallId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("interviews")
+      .withIndex("by_stream_call_id", (q) => q.eq("streamCallId", args.streamCallId))
+      .first();
+  },
+});
+
 export const updateInterviewStatus = mutation({
   args: {
     id: v.id("interviews"),
@@ -91,11 +121,8 @@ export const updateInterviewStatusWithResult = mutation({
   handler: async (ctx, args) => {
     const updateData: any = {
       status: args.status,
+      ...(args.status === "completed" ? { endTime: Date.now() } : {}),
     };
-
-    if (args.status === "completed") {
-      updateData.endTime = Date.now();
-    }
 
     if (args.result) {
       updateData.result = args.result;
@@ -108,5 +135,3 @@ export const updateInterviewStatusWithResult = mutation({
     return await ctx.db.patch(args.id, updateData);
   },
 });
-
-// ... keep all your other existing functions
