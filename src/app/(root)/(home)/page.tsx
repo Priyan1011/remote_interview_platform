@@ -11,6 +11,9 @@ import MeetingModal from "@/components/MeetingModal";
 import LoaderUI from "@/components/LoaderUI";
 import { Loader2Icon } from "lucide-react";
 import MeetingCard from "@/components/MeetingCard";
+import { Button } from "@/components/ui/button"; // ADD THIS IMPORT
+import Link from "next/link"; // ADD THIS IMPORT
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"; // ADD THIS IMPORT
 
 export default function Home() {
   const router = useRouter();
@@ -49,6 +52,20 @@ export default function Home() {
             ? "Manage your interviews and review candidates effectively"
             : "Access your upcoming interviews and preparations"}
         </p>
+        
+        {/* ADD DASHBOARD BUTTON FOR CANDIDATES
+        {isCandidate && (
+          <div className="mt-4">
+            <Link href="/dashboard">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                View Full Dashboard
+              </Button>
+            </Link>
+            <p className="text-sm text-muted-foreground mt-2">
+              Track all your interviews, view results, and see detailed feedback
+            </p>
+          </div>
+        )} */}
       </div>
 
       {isInterviewer ? (
@@ -72,12 +89,84 @@ export default function Home() {
         </>
       ) : (
         <>
-          <div>
-            <h1 className="text-3xl font-bold">Your Interviews</h1>
-            <p className="text-muted-foreground mt-1">View and join your scheduled interviews</p>
+          {/* ENHANCED CANDIDATE SECTION WITH DASHBOARD CTA */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Your Interviews</h1>
+              <p className="text-muted-foreground mt-1">
+                View and join your scheduled interviews
+              </p>
+            </div>
+            
+            {/* DASHBOARD BUTTON FOR CANDIDATES */}
+            {/* <Link href="/dashboard">
+              <Button variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50">
+                View Detailed Dashboard
+              </Button>
+            </Link> */}
           </div>
 
-          <div className="mt-8">
+          {/* QUICK STATS CARDS FOR CANDIDATES */}
+          {interviews && interviews.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {interviews.filter(i => i.status === "scheduled" || i.status === "upcoming").length}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {interviews.filter(i => i.status === "completed").length}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Results</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {interviews.filter(i => i.result).length}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* DASHBOARD FEATURES CARD
+          <Card className="mb-8 bg-blue-50 border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-900">
+                    Want to see more details?
+                  </h3>
+                  <p className="text-blue-700 text-sm mt-1">
+                    Access your full dashboard to view interview results, detailed feedback, ratings, and improvement areas.
+                  </p>
+                </div>
+                <Link href="/dashboard">
+                  <Button className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card> */}
+
+          {/* INTERVIEWS LIST */}
+          <div className="mt-4">
             {interviews === undefined ? (
               <div className="flex justify-center py-12">
                 <Loader2Icon className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -89,9 +178,21 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                You have no scheduled interviews at the moment
-              </div>
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">No interviews scheduled</h3>
+                    <p className="text-muted-foreground">
+                      You don't have any interviews scheduled yet. Check back later or contact your recruiter.
+                    </p>
+                    <Link href="/dashboard">
+                      <Button variant="outline">
+                        Check Dashboard
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         </>
