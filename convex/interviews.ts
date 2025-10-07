@@ -25,7 +25,6 @@ export const getCandidateDashboardData = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorized");
 
-    // Get interviews for current candidate
     const interviews = await ctx.db
       .query("interviews")
       .withIndex("by_candidate_id", (q) => q.eq("candidateId", identity.subject))
@@ -33,7 +32,6 @@ export const getCandidateDashboardData = query({
 
     if (interviews.length === 0) return [];
 
-    // Get comments for these interviews
     const interviewIds = interviews.map(i => i._id);
     let comments: any[] = [];
 
@@ -50,7 +48,6 @@ export const getCandidateDashboardData = query({
         .collect();
     }
 
-    // Group comments by interview ID
     const commentsMap = new Map();
     comments.forEach(comment => {
       if (!commentsMap.has(comment.interviewId)) {
@@ -59,42 +56,10 @@ export const getCandidateDashboardData = query({
       commentsMap.get(comment.interviewId).push(comment);
     });
 
-    // Combine data
     return interviews.map(interview => ({
       ...interview,
       comments: commentsMap.get(interview._id) || [],
     }));
-  },
-});
-
-// MISSING FUNCTIONS - ADD THESE BACK:
-export const createInterview = mutation({
-  args: {
-    title: v.string(),
-    description: v.optional(v.string()),
-    startTime: v.number(),
-    status: v.string(),
-    streamCallId: v.string(),
-    candidateId: v.string(),
-    interviewerIds: v.array(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
-
-    return await ctx.db.insert("interviews", {
-      ...args,
-    });
-  },
-});
-
-export const getInterviewByStreamCallId = query({
-  args: { streamCallId: v.string() },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("interviews")
-      .withIndex("by_stream_call_id", (q) => q.eq("streamCallId", args.streamCallId))
-      .first();
   },
 });
 
@@ -127,11 +92,41 @@ export const updateInterviewStatusWithResult = mutation({
     if (args.result) {
       updateData.result = args.result;
     }
-
     if (args.overallRating) {
       updateData.overallRating = args.overallRating;
     }
 
     return await ctx.db.patch(args.id, updateData);
+  },
+});
+
+// MISSING FUNCTIONS - REQUIRED FOR SCHEDULE PAGE:
+export const createInterview = mutation({
+  args: {
+    title: v.string(),
+    description: v.optional(v.string()),
+    startTime: v.number(),
+    status: v.string(),
+    streamCallId: v.string(),
+    candidateId: v.string(),
+    interviewerIds: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    return await ctx.db.insert("interviews", {
+      ...args,
+    });
+  },
+});
+
+export const getInterviewByStreamCallId = query({
+  args: { streamCallId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("interviews")
+      .withIndex("by_stream_call_id", (q) => q.eq("streamCallId", args.streamCallId))
+      .first();
   },
 });
