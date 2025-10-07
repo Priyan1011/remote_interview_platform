@@ -100,7 +100,8 @@ export const updateInterviewStatusWithResult = mutation({
   },
 });
 
-// MISSING FUNCTIONS - REQUIRED FOR SCHEDULE PAGE:
+// MISSING FUNCTIONS - ADD ALL OF THESE:
+
 export const createInterview = mutation({
   args: {
     title: v.string(),
@@ -128,5 +129,25 @@ export const getInterviewByStreamCallId = query({
       .query("interviews")
       .withIndex("by_stream_call_id", (q) => q.eq("streamCallId", args.streamCallId))
       .first();
+  },
+});
+
+// ADD THIS MISSING FUNCTION FOR CommentDialog:
+export const updateInterviewResult = mutation({
+  args: {
+    id: v.id("interviews"),
+    result: v.union(v.literal("passed"), v.literal("failed")),
+    overallRating: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
+    return await ctx.db.patch(args.id, {
+      result: args.result,
+      overallRating: args.overallRating,
+      status: "completed",
+      endTime: Date.now(),
+    });
   },
 });
