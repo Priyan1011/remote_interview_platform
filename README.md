@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <h1 align="center">✨ Video Calling Interview Platform ✨</h1>
 
 
@@ -34,4 +33,4 @@ npm run dev
 ```
 =======
 # remote_interview_platform
->>>>>>> b45b22891eceddbf391777b2fca7aeba2105c10c
+
